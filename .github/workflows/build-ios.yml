@@ -71,10 +71,12 @@ jobs:
 
       - name: Package into .ipa
         run: |
-          cd ios/build/Build/Products/Release-iphoneos
+          echo "Searching for .app bundle..."
+          APP_PATH=$(find ios/build -name "*.app" -type d | head -1)
+          echo "Found app at: $APP_PATH"
           mkdir Payload
-          cp -r *.app Payload/
-          zip -r ../../../../../app.ipa Payload
+          cp -r "$APP_PATH" Payload/
+          zip -r app.ipa Payload
           
       - name: Upload IPA
         uses: actions/upload-artifact@v4

@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Image, K
 import { ImagePlus, Send, Settings, Download } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 
-export default function ChatInterface({ onOpenDownloader, onOpenSettings, isModelLoaded, isInferring, isDarkMode }) {
+export default function ChatInterface({ onOpenDownloader, onOpenSettings, isModelLoaded, onSendMessage, isInferring, isDarkMode }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
