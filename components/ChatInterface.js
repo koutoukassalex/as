@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Image, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { ImagePlus, Send, Menu, Download } from 'lucide-react-native';
+import { ImagePlus, Send, Settings, Download } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../contexts/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
 
-export default function ChatInterface({ onOpenDownloader, isModelLoaded, onSendMessage, isInferring }) {
+export default function ChatInterface({ onOpenDownloader, onOpenSettings, isModelLoaded, onSendMessage, isInferring }) {
   const { colors, isDarkMode } = useTheme();
-  const navigation = useNavigation();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
@@ -84,8 +82,8 @@ export default function ChatInterface({ onOpenDownloader, isModelLoaded, onSendM
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.openDrawer()}>
-          <Menu size={24} color={colors.icon} />
+        <TouchableOpacity style={styles.iconButton} onPress={onOpenSettings}>
+          <Settings size={24} color={colors.icon} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Qwen2-VL Local</Text>
         <TouchableOpacity style={styles.iconButton} onPress={onOpenDownloader}>

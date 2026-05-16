@@ -51,26 +51,27 @@ jobs:
       - name: Install CocoaPods
         run: |
           cd ios
-          pod install || true
+          pod install
 
       - name: Build App (Unsigned)
         run: |
           cd ios
-          
-          # Find the workspace dynamically
           WORKSPACE=$(ls | grep \.xcworkspace$ | head -1)
           SCHEME="${WORKSPACE%.xcworkspace}"
           
           echo "Building Workspace: $WORKSPACE with Scheme: $SCHEME"
           
-          # Build the app without code signing
-          # We use -quiet to avoid hitting GitHub log limits
+          # Force build for physical device (arm64)
+          # We use -quiet to avoid GitHub log limits
           xcodebuild \
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
             -configuration Release \
             -sdk iphoneos \
             -derivedDataPath ./build \
+            ARCHS="arm64" \
+            VALID_ARCHS="arm64" \
+            ONLY_ACTIVE_ARCH=NO \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
@@ -84,10 +85,16 @@ jobs:
           APP_PATH=$(find ios/build/Build/Products -type d -name "*.app" | head -1)
           echo "Found app at: $APP_PATH"
           
-          # Failsafe: Manually generate and inject JS bundle if it's missing
+          # Ensure Info.plist is present
+          if [ ! -f "$APP_PATH/Info.plist" ]; then
+            echo "ERROR: Info.plist missing from .app bundle!"
+            exit 1
+          fi
+          
+          # Verify JS bundle exists, if not generate it
           if [ ! -f "$APP_PATH/main.jsbundle" ]; then
-            echo "main.jsbundle missing! Generating manually..."
-            npx expo export:embed \
+            echo "main.jsbundle missing! Generating..."
+            npx react-native bundle \
               --platform ios \
               --dev false \
               --entry-file node_modules/expo/AppEntry.js \
