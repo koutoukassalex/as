@@ -63,7 +63,8 @@ jobs:
           
           # Find the workspace dynamically
           WORKSPACE=$(ls | grep \.xcworkspace$ | head -1)
-          SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list -json | jq -r '.workspace.schemes[0]')
+          # Derive scheme from workspace name (strip .xcworkspace extension)
+          SCHEME="${WORKSPACE%.xcworkspace}"
           
           echo "Building Workspace: $WORKSPACE with Scheme: $SCHEME"
           echo "Output directory: $OUTPUT_DIR"
