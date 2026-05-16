@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Install and build
+    name: Build Unsigned IPA
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,20 +17,40 @@ jobs:
         with:
           node-version: 20
 
-      - name: Setup Expo and EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
       - name: Install dependencies
         run: npm install
 
-      - name: Build iOS App (Local on runner)
-        run: eas build --platform ios --local --non-interactive --output app.ipa
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - name: Generate Native iOS Code (Prebuild)
+        run: npx expo prebuild --platform ios --clean
 
+      - name: Build App (Unsigned)
+        run: |
+          cd ios
+          
+          # Find the workspace dynamically since Expo generates it
+          WORKSPACE=$(ls | grep \.xcworkspace$)
+          SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list -json | jq -r '.workspace.schemes[0]')
+          
+          echo "Building Workspace: $WORKSPACE with Scheme: $SCHEME"
+          
+          # Force Xcode to compile the code without Apple Developer Certificates
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath ./build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Package into .ipa
+        run: |
+          cd ios/build/Build/Products/Release-iphoneos
+          mkdir Payload
+          cp -r *.app Payload/
+          zip -r ../../../../../app.ipa Payload
+          
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
