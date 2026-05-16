@@ -10,6 +10,7 @@ import { loadLlamaModel, generateLlamaResponse, releaseLlamaModel } from './util
 
 function MainApp() {
   const { colors, isDarkMode } = useTheme();
+  const [nativeModuleError, setNativeModuleError] = useState(null);
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [isInferring, setIsInferring] = useState(false);
   const [wifiOnlyDownloads, setWifiOnlyDownloads] = useState(true);
@@ -17,6 +18,15 @@ function MainApp() {
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
+    // Basic check for native module
+    try {
+      const { initLlama } = require('llama.rn');
+      if (!initLlama) throw new Error('initLlama is undefined');
+    } catch (e) {
+      console.error("Native module check failed:", e);
+      setNativeModuleError("Llama native module is missing. This usually happens if 'npx expo prebuild' failed or the plugin was removed.");
+    }
+
     return () => {
       releaseLlamaModel();
     };
@@ -59,6 +69,12 @@ function MainApp() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
       
+      {nativeModuleError && (
+        <View style={{ backgroundColor: '#FF5252', padding: 12 }}>
+          <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>{nativeModuleError}</Text>
+        </View>
+      )}
+
       <ChatInterface 
         onOpenDownloader={() => setShowDownloader(true)}
         onOpenSettings={() => setShowSettings(true)}

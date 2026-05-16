@@ -53,7 +53,7 @@ jobs:
           cd ios
           pod install
 
-      - name: Build App (Unsigned)
+      - name: Build App (Unsigned Archive)
         run: |
           cd ios
           WORKSPACE=$(ls | grep \.xcworkspace$ | head -1)
@@ -61,46 +61,42 @@ jobs:
           
           echo "Building Workspace: $WORKSPACE with Scheme: $SCHEME"
           
-          # Force build for physical device (arm64)
-          # We use -quiet to avoid GitHub log limits
+          # Create an Archive (The most robust build method)
           xcodebuild \
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
             -configuration Release \
             -sdk iphoneos \
-            -derivedDataPath ./build \
+            -archivePath ./build/App.xcarchive \
             ARCHS="arm64" \
-            VALID_ARCHS="arm64" \
-            ONLY_ACTIVE_ARCH=NO \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            -quiet
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES=YES \
+            ENABLE_BITCODE=NO \
+            -quiet archive
           
-          echo "BUILD SUCCEEDED"
+          echo "ARCHIVE SUCCEEDED"
 
       - name: Package into .ipa
         run: |
-          # Find the .app in derivedData
-          APP_PATH=$(find ios/build/Build/Products -type d -name "*.app" | head -1)
-          echo "Found app at: $APP_PATH"
+          # Extract the .app from the archive
+          APP_PATH=$(find ios/build/App.xcarchive -type d -name "*.app" | head -1)
+          echo "Found app in archive at: $APP_PATH"
           
-          # Ensure Info.plist is present
-          if [ ! -f "$APP_PATH/Info.plist" ]; then
-            echo "ERROR: Info.plist missing from .app bundle!"
-            exit 1
-          fi
+          # Force generate JS bundle to be sure
+          echo "Generating JS bundle..."
+          npx react-native bundle \
+            --platform ios \
+            --dev false \
+            --entry-file node_modules/expo/AppEntry.js \
+            --bundle-output "$APP_PATH/main.jsbundle" \
+            --assets-dest "$APP_PATH"
           
-          # Verify JS bundle exists, if not generate it
-          if [ ! -f "$APP_PATH/main.jsbundle" ]; then
-            echo "main.jsbundle missing! Generating..."
-            npx react-native bundle \
-              --platform ios \
-              --dev false \
-              --entry-file node_modules/expo/AppEntry.js \
-              --bundle-output "$APP_PATH/main.jsbundle" \
-              --assets-dest "$APP_PATH"
-          fi
+          # Final Diagnostic
+          echo "=== App Bundle Contents ==="
+          ls -R "$APP_PATH" | head -50
           
           mkdir -p Payload
           cp -r "$APP_PATH" Payload/

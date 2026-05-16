@@ -9,6 +9,10 @@ export const loadLlamaModel = async (modelPath, mmprojPath = null) => {
   }
 
   try {
+    if (typeof initLlama === 'undefined') {
+      throw new Error('Llama native module not found. Check if llama.rn is correctly installed and linked.');
+    }
+
     const config = {
       model: modelPath,
       n_ctx: 2048, // Context window size
@@ -21,7 +25,13 @@ export const loadLlamaModel = async (modelPath, mmprojPath = null) => {
       config.mmproj = mmprojPath;
     }
 
+    console.log("Initializing Llama with config:", config);
     currentLlamaContext = await initLlama(config);
+    
+    if (!currentLlamaContext) {
+      throw new Error('Failed to create Llama context');
+    }
+
     return currentLlamaContext;
   } catch (error) {
     console.error("Failed to load Llama model:", error);
