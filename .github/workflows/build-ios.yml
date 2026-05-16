@@ -23,10 +23,27 @@ jobs:
       - name: Generate placeholder assets
         run: |
           mkdir -p assets
-          magick -size 1024x1024 xc:'#1a1a2e' -fill '#4A90E2' -draw "circle 512,512 512,256" assets/icon.png
-          magick -size 1284x2778 xc:'#121212' -fill '#4A90E2' -draw "circle 642,1389 642,1200" assets/splash.png
-          cp assets/icon.png assets/adaptive-icon.png
-          magick -size 48x48 xc:'#1a1a2e' assets/favicon.png
+          python3 -c "
+          import struct, zlib
+          def make_png(w, h, r, g, b, path):
+              raw = b''
+              for y in range(h):
+                  raw += b'\x00' + bytes([r,g,b]) * w
+              comp = zlib.compress(raw)
+              def chunk(ctype, data):
+                  c = ctype + data
+                  return struct.pack('>I', len(data)) + c + struct.pack('>I', zlib.crc32(c) & 0xffffffff)
+              with open(path, 'wb') as f:
+                  f.write(b'\x89PNG\r\n\x1a\n')
+                  f.write(chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)))
+                  f.write(chunk(b'IDAT', comp))
+                  f.write(chunk(b'IEND', b''))
+          make_png(1024, 1024, 26, 26, 46, 'assets/icon.png')
+          make_png(1284, 2778, 18, 18, 18, 'assets/splash.png')
+          make_png(1024, 1024, 26, 26, 46, 'assets/adaptive-icon.png')
+          make_png(48, 48, 26, 26, 46, 'assets/favicon.png')
+          print('Assets generated!')
+          "
 
       - name: Generate Native iOS Code (Prebuild)
         run: npx expo prebuild --platform ios --clean
