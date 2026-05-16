@@ -53,43 +53,43 @@ jobs:
           cd ios
           pod install || true
 
-      - name: Build and Package IPA
+      - name: Build App (Unsigned)
         run: |
           cd ios
           
-          # Set explicit output directory
-          OUTPUT_DIR="$PWD/output"
-          mkdir -p "$OUTPUT_DIR"
-          
           # Find the workspace dynamically
           WORKSPACE=$(ls | grep \.xcworkspace$ | head -1)
-          # Derive scheme from workspace name (strip .xcworkspace extension)
+          # Derive scheme from workspace name
           SCHEME="${WORKSPACE%.xcworkspace}"
           
           echo "Building Workspace: $WORKSPACE with Scheme: $SCHEME"
-          echo "Output directory: $OUTPUT_DIR"
           
-          # Build with explicit output directory
+          # Build the app without code signing
           xcodebuild \
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
             -configuration Release \
             -sdk iphoneos \
             -derivedDataPath ./build \
-            CONFIGURATION_BUILD_DIR="$OUTPUT_DIR" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            | tail -20
+            | tail -5
           
-          echo "=== Build output contents ==="
-          ls -la "$OUTPUT_DIR"
+          echo "BUILD SUCCEEDED"
+
+      - name: Package into .ipa
+        run: |
+          # Find the .app in derivedData
+          APP_PATH=$(find ios/build/Build/Products -type d -name "*.app" | head -1)
+          echo "Found app at: $APP_PATH"
           
-          # Package into IPA
-          cd "$OUTPUT_DIR"
+          # Verify Info.plist exists
+          ls -la "$APP_PATH/Info.plist"
+          
           mkdir -p Payload
-          cp -r *.app Payload/
-          zip -r ../../app.ipa Payload
+          cp -r "$APP_PATH" Payload/
+          zip -r app.ipa Payload
           echo "IPA created successfully!"
 
       - name: Upload IPA
