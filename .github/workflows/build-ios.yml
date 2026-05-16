@@ -48,36 +48,49 @@ jobs:
       - name: Generate Native iOS Code (Prebuild)
         run: npx expo prebuild --platform ios --clean
 
-      - name: Build App (Unsigned)
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install || true
+
+      - name: Build and Package IPA
         run: |
           cd ios
           
-          # Find the workspace dynamically since Expo generates it
-          WORKSPACE=$(ls | grep \.xcworkspace$)
+          # Set explicit output directory
+          OUTPUT_DIR="$PWD/output"
+          mkdir -p "$OUTPUT_DIR"
+          
+          # Find the workspace dynamically
+          WORKSPACE=$(ls | grep \.xcworkspace$ | head -1)
           SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list -json | jq -r '.workspace.schemes[0]')
           
           echo "Building Workspace: $WORKSPACE with Scheme: $SCHEME"
+          echo "Output directory: $OUTPUT_DIR"
           
-          # Force Xcode to compile the code without Apple Developer Certificates
+          # Build with explicit output directory
           xcodebuild \
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
             -configuration Release \
             -sdk iphoneos \
             -derivedDataPath ./build \
+            CONFIGURATION_BUILD_DIR="$OUTPUT_DIR" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
-
-      - name: Package into .ipa
-        run: |
-          echo "Searching for .app bundle..."
-          APP_PATH=$(find ios/build -name "*.app" -type d | head -1)
-          echo "Found app at: $APP_PATH"
-          mkdir Payload
-          cp -r "$APP_PATH" Payload/
-          zip -r app.ipa Payload
+            CODE_SIGN_IDENTITY="" \
+            | tail -20
           
+          echo "=== Build output contents ==="
+          ls -la "$OUTPUT_DIR"
+          
+          # Package into IPA
+          cd "$OUTPUT_DIR"
+          mkdir -p Payload
+          cp -r *.app Payload/
+          zip -r ../../app.ipa Payload
+          echo "IPA created successfully!"
+
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
