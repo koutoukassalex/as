@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "Local Qwen2-VL",
+    "slug": "local-qwen-ios",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#121212"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourname.localqwen"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#121212"
+      },
+      "package": "com.yourname.localqwen"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "llama.rn",
+        {
+          "ios": {
+            "metal": true,
+            "coreml": false
+          }
+        }
+      ],
+      [
+        "expo-document-picker",
+        {
+          "appleTeamId": "YOUR_APPLE_TEAM_ID"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app needs access to your photos to let you chat with the AI about your images."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "YOUR-EAS-PROJECT-ID"
+      }
+    }
+  }
+}
