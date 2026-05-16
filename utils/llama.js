@@ -9,8 +9,8 @@ export const loadLlamaModel = async (modelPath, mmprojPath = null) => {
   }
 
   try {
-    if (typeof initLlama === 'undefined') {
-      throw new Error('Llama native module not found. Check if llama.rn is correctly installed and linked.');
+    if (!initLlama) {
+      throw new Error('Llama native module (initLlama) is not available. Please ensure llama.rn is correctly installed and linked.');
     }
 
     const config = {

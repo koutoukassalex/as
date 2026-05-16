@@ -18,15 +18,6 @@ function MainApp() {
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
-    // Basic check for native module
-    try {
-      const { initLlama } = require('llama.rn');
-      if (!initLlama) throw new Error('initLlama is undefined');
-    } catch (e) {
-      console.error("Native module check failed:", e);
-      setNativeModuleError("Llama native module is missing. This usually happens if 'npx expo prebuild' failed or the plugin was removed.");
-    }
-
     return () => {
       releaseLlamaModel();
     };
