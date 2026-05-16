@@ -28,6 +28,8 @@ jobs:
 
       - name: Build iOS App (Local on runner)
         run: eas build --platform ios --local --non-interactive --output app.ipa
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
