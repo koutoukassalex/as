@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Image, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { ImagePlus, Send, Settings, Download } from 'lucide-react-native';
+import { ImagePlus, Send, Menu, Download } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useTheme } from '../contexts/ThemeContext';
+import { useNavigation } from '@react-navigation/native';
 
-export default function ChatInterface({ onOpenDownloader, onOpenSettings, isModelLoaded, onSendMessage, isInferring, isDarkMode }) {
+export default function ChatInterface({ onOpenDownloader, isModelLoaded, onSendMessage, isInferring }) {
+  const { colors, isDarkMode } = useTheme();
+  const navigation = useNavigation();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
-
-  const themeStyles = isDarkMode ? darkStyles : lightStyles;
-  const currentStyles = { ...baseStyles, ...themeStyles };
-  const iconColor = isDarkMode ? "#fff" : "#333";
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -59,61 +59,65 @@ export default function ChatInterface({ onOpenDownloader, onOpenSettings, isMode
   };
 
   const renderMessage = ({ item }) => (
-    <View style={[currentStyles.messageBubble, item.role === 'user' ? currentStyles.userMessage : currentStyles.aiMessage]}>
+    <View style={[
+      styles.messageBubble, 
+      item.role === 'user' ? styles.userMessage : { backgroundColor: colors.card },
+      { alignSelf: item.role === 'user' ? 'flex-end' : 'flex-start' }
+    ]}>
       {item.imageUri && (
-        <Image source={{ uri: item.imageUri }} style={currentStyles.messageImage} />
+        <Image source={{ uri: item.imageUri }} style={styles.messageImage} />
       )}
       {item.content ? (
-        <Text style={item.role === 'user' ? currentStyles.userMessageText : currentStyles.aiMessageText}>{item.content}</Text>
+        <Text style={{ color: item.role === 'user' ? '#fff' : colors.text, fontSize: 16, lineHeight: 24 }}>
+          {item.content}
+        </Text>
       ) : item.isGenerating ? (
-        <ActivityIndicator size="small" color={item.role === 'user' ? "#fff" : iconColor} />
+        <ActivityIndicator size="small" color={item.role === 'user' ? "#fff" : colors.primary} />
       ) : null}
     </View>
   );
 
   return (
     <KeyboardAvoidingView 
-      style={currentStyles.container} 
+      style={[styles.container, { backgroundColor: colors.background }]} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={90}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <View style={currentStyles.header}>
-        <Text style={currentStyles.headerTitle}>Qwen2-VL Local</Text>
-        <View style={currentStyles.headerActions}>
-          <TouchableOpacity style={currentStyles.iconButton} onPress={onOpenDownloader}>
-            <Download size={24} color={isModelLoaded ? "#4CAF50" : iconColor} />
-          </TouchableOpacity>
-          <TouchableOpacity style={currentStyles.iconButton} onPress={onOpenSettings}>
-            <Settings size={24} color={iconColor} />
-          </TouchableOpacity>
-        </View>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.openDrawer()}>
+          <Menu size={24} color={colors.icon} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Qwen2-VL Local</Text>
+        <TouchableOpacity style={styles.iconButton} onPress={onOpenDownloader}>
+          <Download size={24} color={isModelLoaded ? "#4CAF50" : colors.icon} />
+        </TouchableOpacity>
       </View>
 
       <FlatList
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={currentStyles.messageList}
+        contentContainerStyle={styles.messageList}
       />
 
       {selectedImage && (
-        <View style={currentStyles.imagePreviewContainer}>
-          <Image source={{ uri: selectedImage.uri }} style={currentStyles.imagePreview} />
-          <TouchableOpacity style={currentStyles.removeImage} onPress={() => setSelectedImage(null)}>
-            <Text style={currentStyles.removeImageText}>✕</Text>
+        <View style={styles.imagePreviewContainer}>
+          <Image source={{ uri: selectedImage.uri }} style={styles.imagePreview} />
+          <TouchableOpacity style={styles.removeImage} onPress={() => setSelectedImage(null)}>
+            <Text style={styles.removeImageText}>✕</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      <View style={currentStyles.inputContainer}>
-        <TouchableOpacity style={currentStyles.iconButton} onPress={pickImage} disabled={isInferring}>
-          <ImagePlus size={24} color={isModelLoaded ? "#4A90E2" : "#999"} />
+      <View style={[styles.inputContainer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+        <TouchableOpacity style={styles.iconButton} onPress={pickImage} disabled={isInferring}>
+          <ImagePlus size={24} color={isModelLoaded ? colors.primary : "#999"} />
         </TouchableOpacity>
         
         <TextInput
-          style={currentStyles.textInput}
+          style={[styles.textInput, { color: colors.text, backgroundColor: colors.inputBackground }]}
           placeholder={isModelLoaded ? "Ask Qwen2-VL something..." : "Please load a model first..."}
-          placeholderTextColor={isDarkMode ? "#666" : "#999"}
+          placeholderTextColor={colors.subtext}
           value={input}
           onChangeText={setInput}
           multiline
@@ -121,7 +125,7 @@ export default function ChatInterface({ onOpenDownloader, onOpenSettings, isMode
         />
         
         <TouchableOpacity 
-          style={[currentStyles.sendButton, (!input.trim() && !selectedImage) || !isModelLoaded || isInferring ? currentStyles.sendButtonDisabled : null]} 
+          style={[styles.sendButton, { backgroundColor: colors.primary }, (!input.trim() && !selectedImage) || !isModelLoaded || isInferring ? { backgroundColor: '#999' } : null]} 
           onPress={handleSend}
           disabled={(!input.trim() && !selectedImage) || !isModelLoaded || isInferring}
         >
@@ -132,7 +136,7 @@ export default function ChatInterface({ onOpenDownloader, onOpenSettings, isMode
   );
 }
 
-const baseStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -147,10 +151,6 @@ const baseStyles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   iconButton: {
     padding: 4,
   },
@@ -162,24 +162,11 @@ const baseStyles = StyleSheet.create({
     maxWidth: '80%',
     padding: 12,
     borderRadius: 16,
+    marginBottom: 8,
   },
   userMessage: {
-    alignSelf: 'flex-end',
     backgroundColor: '#4A90E2',
     borderBottomRightRadius: 4,
-  },
-  aiMessage: {
-    alignSelf: 'flex-start',
-    borderBottomLeftRadius: 4,
-  },
-  userMessageText: {
-    color: '#fff',
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  aiMessageText: {
-    fontSize: 16,
-    lineHeight: 24,
   },
   messageImage: {
     width: 200,
@@ -204,15 +191,11 @@ const baseStyles = StyleSheet.create({
     borderRadius: 20,
   },
   sendButton: {
-    backgroundColor: '#4A90E2',
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#999',
   },
   imagePreviewContainer: {
     padding: 12,
@@ -239,57 +222,5 @@ const baseStyles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
-  },
-});
-
-const lightStyles = StyleSheet.create({
-  container: {
-    backgroundColor: '#f0f0f0',
-  },
-  header: {
-    borderBottomColor: '#ddd',
-  },
-  headerTitle: {
-    color: '#000',
-  },
-  aiMessage: {
-    backgroundColor: '#fff',
-  },
-  aiMessageText: {
-    color: '#000',
-  },
-  inputContainer: {
-    borderTopColor: '#ddd',
-    backgroundColor: '#fff',
-  },
-  textInput: {
-    color: '#000',
-    backgroundColor: '#f9f9f9',
-  },
-});
-
-const darkStyles = StyleSheet.create({
-  container: {
-    backgroundColor: '#121212',
-  },
-  header: {
-    borderBottomColor: '#2A2A2A',
-  },
-  headerTitle: {
-    color: '#fff',
-  },
-  aiMessage: {
-    backgroundColor: '#2A2A2A',
-  },
-  aiMessageText: {
-    color: '#fff',
-  },
-  inputContainer: {
-    borderTopColor: '#2A2A2A',
-    backgroundColor: '#1E1E1E',
-  },
-  textInput: {
-    color: '#fff',
-    backgroundColor: '#2A2A2A',
   },
 });
