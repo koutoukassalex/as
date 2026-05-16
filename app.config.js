@@ -1,4 +1,4 @@
-{
+module.exports = {
   "expo": {
     "name": "Local Qwen2-VL",
     "slug": "ai",
