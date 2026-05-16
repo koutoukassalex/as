@@ -27,6 +27,10 @@ export default function SettingsScreen({ wifiOnlyDownloads, setWifiOnlyDownloads
           {renderThemeOption('Light', THEMES.LIGHT)}
           {renderThemeOption('Dark', THEMES.DARK)}
           {renderThemeOption('AMOLED', THEMES.AMOLED)}
+          {renderThemeOption('Ocean', THEMES.OCEAN)}
+          {renderThemeOption('Forest', THEMES.FOREST)}
+          {renderThemeOption('Sunset', THEMES.SUNSET)}
+          {renderThemeOption('Lavender', THEMES.LAVENDER)}
           {renderThemeOption('System', THEMES.SYSTEM)}
         </View>
       </View>

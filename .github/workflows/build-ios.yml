@@ -59,12 +59,12 @@ jobs:
           
           # Find the workspace dynamically
           WORKSPACE=$(ls | grep \.xcworkspace$ | head -1)
-          # Derive scheme from workspace name
           SCHEME="${WORKSPACE%.xcworkspace}"
           
           echo "Building Workspace: $WORKSPACE with Scheme: $SCHEME"
           
           # Build the app without code signing
+          # We use -quiet to avoid hitting GitHub log limits
           xcodebuild \
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
@@ -74,7 +74,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            | tail -5
+            -quiet
           
           echo "BUILD SUCCEEDED"
 
@@ -84,8 +84,16 @@ jobs:
           APP_PATH=$(find ios/build/Build/Products -type d -name "*.app" | head -1)
           echo "Found app at: $APP_PATH"
           
-          # Verify Info.plist exists
-          ls -la "$APP_PATH/Info.plist"
+          # Failsafe: Manually generate and inject JS bundle if it's missing
+          if [ ! -f "$APP_PATH/main.jsbundle" ]; then
+            echo "main.jsbundle missing! Generating manually..."
+            npx expo export:embed \
+              --platform ios \
+              --dev false \
+              --entry-file node_modules/expo/AppEntry.js \
+              --bundle-output "$APP_PATH/main.jsbundle" \
+              --assets-dest "$APP_PATH"
+          fi
           
           mkdir -p Payload
           cp -r "$APP_PATH" Payload/
