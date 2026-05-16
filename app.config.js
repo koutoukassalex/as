@@ -29,8 +29,10 @@ module.exports = {
     },
     "plugins": [
       [
-        "llama.rn",
-        {}
+        "./plugins/withLlamaRNLocal",
+        {
+          "enableEntitlements": true
+        }
       ],
       [
         "expo-document-picker",
